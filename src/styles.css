@@ -1,0 +1,119 @@
+.weather-info {
+    background-color: #dee0e2; /* New background color */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    opacity: 0; /* Initially hidden for animation */
+    transform: translateY(20px); /* Start position */
+    animation: fadeInUp 1s forwards; /* Animation to make it appear */
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out; /* Transition for smooth hover effect */
+    max-width: 900px;
+    margin: 0 auto;
+}
+.weather-info:hover {
+
+    background-color: rgb(181, 192, 201);
+    transform: translateY(-5px); /* Move up on hover */
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2); /* Darker shadow on hover */
+}
+
+h2 {
+    text-align: center;
+    font-size: 2em;
+    color: #1976d2; /* New color */
+    margin-bottom: 20px;
+}
+
+/* Center the input with hover and animation */
+.city-input {
+    width: 100%;
+    max-width: 400px;
+    padding: 12px;
+    font-size: 1.2em;
+    border: 2px solid #1976d2; /* New border color */
+    border-radius: 5px;
+    margin: 0 auto 20px;
+    display: block;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.city-input:focus {
+    border-color: #0d47a1; /* New focus border color */
+    outline: none;
+    transform: scale(1.05);
+}
+
+.error-message {
+    color: red;
+    text-align: center;
+    margin-top: 10px;
+}
+
+/* Animation for fading in and moving up */
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(4);
+    }
+}
+
+/* Hover effect for the weather info div */
+.weather-info:hover {
+    transform: scale(1.05);
+    transform: translateY(-5px); /* Slightly lift the div on hover */
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2); /* Darker shadow on hover */
+}
+
+.weather-info h3 {
+    color: #1976d2; /* New color */
+    font-size: 1.5em;
+    text-align: center;
+}
+
+.weather-info p {
+    font-size: 1.2em;
+    color: #555;
+    text-align: center;
+}
+
+/* Row styling for layout */
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+/* Styling for the chart containers (Graphs) */
+.chart-container {
+    background-color: #e5fde3; /* Light blue background for charts */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    flex: 1 1 48%; /* Two graphs per row */
+    margin-bottom: 20px;
+}
+
+.chart-container:hover {
+    transform: scale(1.05);
+}
+
+.chart-container h3 {
+    color: #1976d2; /* New color */
+    text-align: center;
+    font-size: 1.5em;
+    margin-bottom: 20px;
+}
+
+/* Green color for graphs */
+.chartjs-render-monitor {
+    border-color: #1976d2 !important; /* New border color */
+}
+
+/* Responsive for smaller screens */
+@media (max-width: 768px) {
+    .chart-container {
+        flex: 1 1 100%; /* On smaller screens, make each chart take up the full row */
+    }
+}
