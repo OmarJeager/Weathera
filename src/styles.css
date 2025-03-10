@@ -117,3 +117,20 @@ h2 {
         flex: 1 1 100%; /* On smaller screens, make each chart take up the full row */
     }
 }
+.forecast-container {
+    margin-top: 20px;
+  }
+  
+  .forecast-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .forecast-day {
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+    flex: 1 1 calc(14.28% - 20px); /* 7 days in a row */
+    box-sizing: border-box;
+  }

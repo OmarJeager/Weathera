@@ -30,10 +30,12 @@ const Weather = () => {
   const [city, setCity] = useState("");
   const [weather, setWeather] = useState(null);
   const [forecast, setForecast] = useState(null);
+  const [dailyForecast, setDailyForecast] = useState([]);
   const [error, setError] = useState("");
 
-  const API_KEY = "6be22578aa5dad675e4eee8caf2e1e5f";
+  const API_KEY = "6be22578aa5dad675e4eee8caf2e1e5f"; // Replace with your OpenWeatherMap API key
 
+  // Fetch weather and forecast data
   const fetchWeather = async () => {
     if (!city) {
       setError("Please enter a city name.");
@@ -41,30 +43,62 @@ const Weather = () => {
     }
 
     try {
+      // Fetch current weather
       const weatherResponse = await axios.get(
         `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`
       );
       setWeather(weatherResponse.data);
 
+      // Fetch 5-day forecast (3-hour intervals)
       const forecastResponse = await axios.get(
         `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${API_KEY}&units=metric`
       );
       setForecast(forecastResponse.data);
+
+      // Process forecast data to get daily averages
+      const processedForecast = processForecastData(forecastResponse.data);
+      setDailyForecast(processedForecast);
 
       setError("");
     } catch (error) {
       setError("City not found! Try another one.");
       setWeather(null);
       setForecast(null);
+      setDailyForecast([]);
     }
   };
 
+  // Process forecast data to group by day and calculate averages
+  const processForecastData = (forecastData) => {
+    const dailyForecast = {};
+
+    forecastData.list.forEach((item) => {
+      const date = new Date(item.dt * 1000).toLocaleDateString();
+      if (!dailyForecast[date]) {
+        dailyForecast[date] = {
+          temp: [],
+          weather: [],
+        };
+      }
+      dailyForecast[date].temp.push(item.main.temp);
+      dailyForecast[date].weather.push(item.weather[0].main);
+    });
+
+    return Object.keys(dailyForecast).map((date) => ({
+      date,
+      avgTemp: (dailyForecast[date].temp.reduce((a, b) => a + b, 0) / dailyForecast[date].temp.length).toFixed(2),
+      weather: dailyForecast[date].weather[0], // Take the most frequent weather condition
+    }));
+  };
+
+  // Fetch weather data when city changes
   useEffect(() => {
     if (city) {
       fetchWeather();
     }
   }, [city]);
 
+  // Chart data for temperature forecast
   const chartData = {
     labels: forecast
       ? forecast.list.slice(0, 5).map((item) => new Date(item.dt * 1000).toLocaleTimeString())
@@ -80,6 +114,7 @@ const Weather = () => {
     ],
   };
 
+  // Pie chart data for weather conditions distribution
   const pieData = {
     labels: ["Clear", "Clouds", "Rain", "Snow", "Other"],
     datasets: [
@@ -101,6 +136,7 @@ const Weather = () => {
     ],
   };
 
+  // Radar chart data for current weather
   const radarData = {
     labels: ["Temperature", "Humidity", "Wind Speed", "Pressure"],
     datasets: [
@@ -137,6 +173,7 @@ const Weather = () => {
               <p>Weather: {weather.weather[0].description}</p>
               <p>Humidity: {weather.main.humidity}%</p>
               <p>Wind Speed: {weather.wind.speed} m/s</p>
+              <p>Rain: {weather.rain ? weather.rain["1h"] : "No rain"} mm</p>
             </div>
           )}
 
@@ -164,6 +201,24 @@ const Weather = () => {
           )}
         </div>
       </div>
+
+      {dailyForecast.length > 0 && (
+        <div className="forecast-container">
+          <h3>7-Day Forecast</h3>
+          <div className="forecast-list">
+            {dailyForecast.map((day, index) => (
+              <div key={index} className="forecast-day">
+                <p><strong>Date:</strong> {day.date}</p>
+                <p><strong>Avg Temp:</strong> {day.avgTemp}°C</p>
+                <p><strong>Weather:</strong> {day.weather}</p>
+                <p><strong>Rain:</strong> {day.rain ? day.rain : "No rain"} mm</p>
+                <p><strong>Snow:</strong> {day.snow ? day.snow : "No snow"} mm</p>
+                <p><strong>Wind Speed:</strong> {day.windSpeed} m/s</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
