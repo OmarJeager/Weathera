@@ -32,6 +32,9 @@ const Weather = () => {
   const [forecast, setForecast] = useState(null);
   const [dailyForecast, setDailyForecast] = useState([]);
   const [error, setError] = useState("");
+  const [unit, setUnit] = useState("metric"); // 'metric' for Celsius, 'imperial' for Fahrenheit
+  const [searchHistory, setSearchHistory] = useState([]);
+  const [airQuality, setAirQuality] = useState(null);
 
   const API_KEY = "6be22578aa5dad675e4eee8caf2e1e5f"; // Replace with your OpenWeatherMap API key
 
@@ -45,15 +48,21 @@ const Weather = () => {
     try {
       // Fetch current weather
       const weatherResponse = await axios.get(
-        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`
+        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=${unit}`
       );
       setWeather(weatherResponse.data);
 
       // Fetch 5-day forecast (3-hour intervals)
       const forecastResponse = await axios.get(
-        `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${API_KEY}&units=metric`
+        `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${API_KEY}&units=${unit}`
       );
       setForecast(forecastResponse.data);
+
+      // Fetch air quality data
+      const airQualityResponse = await axios.get(
+        `https://api.openweathermap.org/data/2.5/air_pollution?lat=${weatherResponse.data.coord.lat}&lon=${weatherResponse.data.coord.lon}&appid=${API_KEY}`
+      );
+      setAirQuality(airQualityResponse.data);
 
       // Process forecast data to get daily averages
       const processedForecast = processForecastData(forecastResponse.data);
@@ -96,7 +105,29 @@ const Weather = () => {
     if (city) {
       fetchWeather();
     }
-  }, [city]);
+  }, [city, unit]);
+
+  // Fetch weather for current location if available
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const { latitude, longitude } = position.coords;
+        axios
+          .get(
+            `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${API_KEY}&units=${unit}`
+          )
+          .then((response) => {
+            setCity(response.data.name); // Set city to current location
+          })
+          .catch(() => setError("Unable to retrieve location data"));
+      });
+    }
+  }, []);
+
+  // Toggle between Celsius and Fahrenheit
+  const toggleUnit = () => {
+    setUnit(unit === "metric" ? "imperial" : "metric");
+  };
 
   // Chart data for temperature forecast
   const chartData = {
@@ -105,7 +136,7 @@ const Weather = () => {
       : [],
     datasets: [
       {
-        label: "Temperature (°C)",
+        label: `Temperature (${unit === "metric" ? "°C" : "°F"})`,
         data: forecast ? forecast.list.slice(0, 5).map((item) => item.main.temp) : [],
         borderColor: "rgba(54, 162, 235, 1)",
         backgroundColor: "rgba(54, 162, 235, 0.2)",
@@ -150,6 +181,22 @@ const Weather = () => {
     ],
   };
 
+  // Handle city input change
+  const handleCityChange = (e) => {
+    const newCity = e.target.value;
+    setCity(newCity);
+    
+    // Add the new city to the search history if it's not already there
+    if (newCity && !searchHistory.includes(newCity)) {
+      setSearchHistory([newCity, ...searchHistory.slice(0, 4)]); // Keep last 5 searches
+    }
+  };
+
+  // Handle search history city select
+  const handleCitySelect = (selectedCity) => {
+    setCity(selectedCity);
+  };
+
   return (
     <div className="container">
       <h2>Weather App</h2>
@@ -158,18 +205,32 @@ const Weather = () => {
         type="text"
         placeholder="Enter city name"
         value={city}
-        onChange={(e) => setCity(e.target.value)}
+        onChange={handleCityChange}
         className="city-input"
       />
 
+      <div className="search-history">
+        {searchHistory.map((historyCity, index) => (
+          <button key={index} onClick={() => handleCitySelect(historyCity)}>
+            {historyCity}
+          </button>
+        ))}
+      </div>
+
       {error && <p className="error-message">{error}</p>}
+
+      <div>
+        <button onClick={toggleUnit}>
+          Toggle to {unit === "metric" ? "°F" : "°C"}
+        </button>
+      </div>
 
       <div className="row">
         <div className="column">
           {weather && (
             <div className="weather-info">
               <h3>{weather.name}, {weather.sys.country}</h3>
-              <p>Temperature: {weather.main.temp}°C</p>
+              <p>Temperature: {weather.main.temp}°{unit === "metric" ? "C" : "F"}</p>
               <p>Weather: {weather.weather[0].description}</p>
               <p>Humidity: {weather.main.humidity}%</p>
               <p>Wind Speed: {weather.wind.speed} m/s</p>
@@ -209,14 +270,18 @@ const Weather = () => {
             {dailyForecast.map((day, index) => (
               <div key={index} className="forecast-day">
                 <p><strong>Date:</strong> {day.date}</p>
-                <p><strong>Avg Temp:</strong> {day.avgTemp}°C</p>
+                <p><strong>Avg Temp:</strong> {day.avgTemp}°{unit === "metric" ? "C" : "F"}</p>
                 <p><strong>Weather:</strong> {day.weather}</p>
-                <p><strong>Rain:</strong> {day.rain ? day.rain : "No rain"} mm</p>
-                <p><strong>Snow:</strong> {day.snow ? day.snow : "No snow"} mm</p>
-                <p><strong>Wind Speed:</strong> {day.windSpeed} m/s</p>
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {airQuality && (
+        <div className="air-quality">
+          <h3>Air Quality</h3>
+          <p>AQI: {airQuality.list[0].main.aqi}</p>
         </div>
       )}
     </div>
